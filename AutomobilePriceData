@@ -1,0 +1,42 @@
+from azureml import Workspace
+
+ws = Workspace()
+ds = ws.datasets['Automobile price data (Raw)']
+frame = ds.to_dataframe()
+
+import pandas as pd
+import numpy as np
+cols = ['price', 'bore', 'stroke', 'horsepower', 'peak-rpm']
+## Convert the '?' to a nan
+for column in cols:
+    frame.loc[frame[column] == '?', column] = np.nan
+## Coerce colums to numeric
+for col in cols:
+    frame[col] = pd.to_numeric(frame[col])
+    ## Drop rows with missing values
+    frame.dropna(axis = 0, inplace = True)
+print('dimensions = ' + str(frame.shape)) # print dimensions of the data frame
+print(frame.dtypes) # print the data types of the columns
+
+def describe(df,col):
+    desc = df[col].describe()
+    idx = desc.index.tolist()
+    idx[5] = 'median'
+    desc.index = idx
+    return desc
+
+describe(frame, 'price')
+
+def plotstats(df,col):
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots(2,1, figsize=(12,8))
+    df.dropna().boxplot(col, ax=ax[0], vert=False, return_type='dict')
+    
+    temp = df[col].as_matrix()
+    ax[1].hist(temp, bins=30, alpha=0.7)
+    plt.ylabel('Number of cars')
+    plt.xlabel(col)
+    return[col]
+    
+%matplotlib inline
+plotstats(frame,'price')
